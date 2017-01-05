@@ -178,7 +178,7 @@ class WithingsMeasureGroup(object):
                 return measure.get_value()
         return None
 
-    def get_fat_hydration(self):
+    def get_hydration(self):
         """convinient function to get hydration"""
         for measure in self.measures:
             if measure.type == WithingsMeasure.TYPE_HYDRATION:
