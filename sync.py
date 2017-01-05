@@ -77,9 +77,9 @@ def sync(withings_username, withings_password, withings_shortname,
     if not user:
         print 'could not find user: %s' % withings_shortname
         return
-    if not user.ispublic:
-        print 'user %s has not opened withings data' % withings_shortname
-        return
+#    if not user.ispublic:
+#        print 'user %s has not opened withings data' % withings_shortname
+#        return
     startdate = int(time.mktime(fromdate.timetuple()))
     enddate = int(time.mktime(todate.timetuple())) + 86399
     groups = user.get_measure_groups(startdate=startdate, enddate=enddate)
@@ -99,11 +99,16 @@ def sync(withings_username, withings_password, withings_shortname,
         dt = group.get_datetime()
         weight = group.get_weight()
         fat_ratio = group.get_fat_ratio()
+        muscle_mass = group.get_muscle_mass()
+        bone_mass = group.get_bone_mass()
+        hydration = group.get_hydration()
         fit.write_device_info(timestamp=dt)
         fit.write_weight_scale(timestamp=dt, 
             weight=weight, 
-            percent_fat=fat_ratio, 
-            percent_hydration=measurements.getPercentHydration()
+            percent_fat=fat_ratio,
+            muscle_mass=muscle_mass,
+            bone_mass=bone_mass,
+            percent_hydration=hydration
             )
         verbose_print('appending weight scale record... %s %skg %s%%\n' % (dt, weight, fat_ratio))
     fit.finish()
