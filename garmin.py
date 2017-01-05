@@ -9,6 +9,8 @@ import requests
 import re
 import sys
 
+s = requests.session()
+
 class LoginSucceeded(Exception):
     pass
 
@@ -37,10 +39,10 @@ class GarminConnect(object):
     
     def _get_cookies(self, record=None, email=None, password=None):
 
-        gcPreResp = requests.get("https://connect.garmin.com/", allow_redirects=False)
+        gcPreResp = s.get("https://connect.garmin.com/", allow_redirects=False)
         # New site gets this redirect, old one does not
         if gcPreResp.status_code == 200:
-            gcPreResp = requests.get("https://connect.garmin.com/signin", allow_redirects=False)
+            gcPreResp = s.get("https://connect.garmin.com/signin", allow_redirects=False)
             req_count = int(re.search("j_id(\d+)", gcPreResp.text).groups(1)[0])
             params = {"login": "login", "login:loginUsernameField": email, "login:password": password, "login:signInButton": "Sign In"}
             auth_retries = 3 # Did I mention Garmin Connect is silly?
@@ -48,7 +50,7 @@ class GarminConnect(object):
                 params["javax.faces.ViewState"] = "j_id%d" % req_count
                 req_count += 1
                 self._rate_limit()
-                resp = requests.post("https://connect.garmin.com/signin", data=params, allow_redirects=False, cookies=gcPreResp.cookies)
+                resp = s.post("https://connect.garmin.com/signin", data=params, allow_redirects=False, cookies=gcPreResp.cookies)
                 if resp.status_code >= 500 and resp.status_code < 600:
                     raise APIException("Remote API failure")
                 if resp.status_code != 302:  # yep
@@ -78,7 +80,7 @@ class GarminConnect(object):
                 # "redirectAfterAccountCreationUrl": "http://connect.garmin.com/post-auth/login",
                 # "webhost": "olaxpw-connect00.garmin.com",
                 "clientId": "GarminConnect",
-                # "gauthHost": "https://sso.garmin.com/sso",
+                "gauthHost": "https://sso.garmin.com/sso",
                 # "rememberMeShown": "true",
                 # "rememberMeChecked": "false",
                 "consumeServiceTicket": "false",
@@ -94,12 +96,12 @@ class GarminConnect(object):
                 # "locale": "en"
             }
             # I may never understand what motivates people to mangle a perfectly good protocol like HTTP in the ways they do...
-            preResp = requests.get("https://sso.garmin.com/sso/login", params=params)
+            preResp = s.get("https://sso.garmin.com/sso/login", params=params)
             if preResp.status_code != 200:
                 raise APIException("SSO prestart error %s %s" % (preResp.status_code, preResp.text))
             data["lt"] = re.search("name=\"lt\"\s+value=\"([^\"]+)\"", preResp.text).groups(1)[0]
 
-            ssoResp = requests.post("https://sso.garmin.com/sso/login", params=params, data=data, allow_redirects=False, cookies=preResp.cookies)
+            ssoResp = s.post("https://sso.garmin.com/sso/login", params=params, data=data, allow_redirects=False, cookies=preResp.cookies)
             if ssoResp.status_code != 200:
                 raise APIException("SSO error %s %s" % (ssoResp.status_code, ssoResp.text))
 
@@ -110,11 +112,11 @@ class GarminConnect(object):
 
             # ...AND WE'RE NOT DONE YET!
 
-            gcRedeemResp1 = requests.get("https://connect.garmin.com/post-auth/login", params={"ticket": ticket}, allow_redirects=False, cookies=gcPreResp.cookies)
+            gcRedeemResp1 = s.get("https://connect.garmin.com/post-auth/login", params={"ticket": ticket}, allow_redirects=False, cookies=gcPreResp.cookies)
             if gcRedeemResp1.status_code != 302:
                 raise APIException("GC redeem 1 error %s %s" % (gcRedeemResp1.status_code, gcRedeemResp1.text))
 
-            gcRedeemResp2 = requests.get(gcRedeemResp1.headers["location"], cookies=gcPreResp.cookies, allow_redirects=False)
+            gcRedeemResp2 = s.get(gcRedeemResp1.headers["location"], cookies=gcPreResp.cookies, allow_redirects=False)
             if gcRedeemResp2.status_code != 302:
                 raise APIException("GC redeem 2 error %s %s" % (gcRedeemResp2.status_code, gcRedeemResp2.text))
 
@@ -130,12 +132,12 @@ class GarminConnect(object):
     def login(self, username, password):
 
         cookies = self._get_cookies(email=username, password=password)
-        GCusername = requests.get("https://connect.garmin.com/user/username", cookies=cookies).json()["username"]
+        GCusername = s.get("https://connect.garmin.com/user/username", cookies=cookies).json()["username"]
         sys.stderr.write('Garmin Connect User Name: ' + GCusername + '\n')    
      
         if not len(GCusername):
             raise APIException("Unable to retrieve username", block=True, user_exception=UserException(UserExceptionType.Authorization, intervention_required=True))
-        return (cookies)
+        return (s.cookies)
 
     def upload_file(self, f, cookie):
         self.opener = self.create_opener(cookie) 
