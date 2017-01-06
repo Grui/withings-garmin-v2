@@ -256,4 +256,3 @@ class WithingsMeasure(object):
 
     def get_value(self):
         return self.value * pow(10, self.unit)
-
