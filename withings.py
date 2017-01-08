@@ -182,7 +182,7 @@ class WithingsMeasureGroup(object):
         """convinient function to get hydration"""
         for measure in self.measures:
             if measure.type == WithingsMeasure.TYPE_HYDRATION:
-                return (100 - measure.get_value())
+                return round(measure.get_value() / WithingsMeasureGroup.get_weight(self),3) * 100
         return None
 
 # Use Garmin's Muscle Mass Value(self calculated)
