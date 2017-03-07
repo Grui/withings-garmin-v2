@@ -153,6 +153,7 @@ class GarminConnect(object):
         boundary = '----withingsgarmin'
         req = urllib2.Request(self.UPLOAD_URL)
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
+        req.add_header('nk', 'NT')
 
         # file
         lines = []
