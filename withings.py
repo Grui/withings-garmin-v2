@@ -178,47 +178,36 @@ class WithingsMeasureGroup(object):
                 return measure.get_value()
         return None
 
-    def get_hydration(self):
-        """convinient function to get hydration"""
-        for measure in self.measures:
-            if measure.type == WithingsMeasure.TYPE_HYDRATION:
-                return round(measure.get_value() / WithingsMeasureGroup.get_weight(self),3) * 100
-        return None
-
-# Use Garmin's Muscle Mass Value(self calculated)
     def get_muscle_mass(self):
-        """convinient function to get muscle mass"""
         for measure in self.measures:
-            if measure.type == WithingsMeasure.TYPE_FAT_FREE_MASS:
-                return (measure.get_value()/2)
+            if measure.type == WithingsMeasure.TYPE_MUSCLE_MASS:
+                return measure.get_value()
         return None
 
-# Use Withings's Muscle Mass Value    
-#    def get_muscle_mass(self):
-#        """convinient function to get muscle mass"""
-#        for measure in self.measures:
-#            if measure.type == WithingsMeasure.TYPE_MUSCLE_MASS:
-#                return measure.get_value()
-#        return None
-    
+
+    def get_hydro(self):
+        for measure in self.measures:
+            if measure.type == WithingsMeasure.TYPE_HYDRO:
+                return measure.get_value()
+        return None
+
+
     def get_bone_mass(self):
-        """convinient function to get bone mass"""
         for measure in self.measures:
             if measure.type == WithingsMeasure.TYPE_BONE_MASS:
                 return measure.get_value()
         return None
-    
-    
+
 class WithingsMeasure(object):
     TYPE_WEIGHT = 1
     TYPE_HEIGHT = 4
     TYPE_FAT_FREE_MASS = 5
     TYPE_FAT_RATIO = 6
     TYPE_FAT_MASS_WEIGHT = 8
-    TYPE_MUSCLE_MASS = 76
-    TYPE_HYDRATION = 77
+    TYPE_HYDRO = 77
     TYPE_BONE_MASS = 88
-    
+    TYPE_MUSCLE_MASS = 76
+
     def __init__(self, measure):
         self._raw_data = measure
         self.value = measure.get('value')
@@ -243,16 +232,18 @@ class WithingsMeasure(object):
         elif (self.type == self.TYPE_FAT_MASS_WEIGHT):
             type_s = 'Fat Mass Weight'
             unit_s = 'kg'
-        elif (self.type == self.TYPE_HYDRATION):
-            type_s = 'Hydration'
+        elif (self_type == self.TYPE_HYDRO):
+            type_s = 'Hydro Ratio'
             unit_s = '%'
-        elif (self.type == self.TYPE_BONE_MASS):
+        elif (self_type == self.TYPE_BONE_MASS):
             type_s = 'Bone Mass'
             unit_s = 'kg'
-        elif (self.type == self.TYPE_MUSCLE_MASS):
-            type_s = 'Fat Muscle Mass'
+        elif (self_type == self.MUSCLE_MASS):
+            type_s = 'Muscle Mass'
             unit_s = 'kg'
+
         return '%s: %s %s' % (type_s, self.get_value(), unit_s)
 
     def get_value(self):
         return self.value * pow(10, self.unit)
+

@@ -21,7 +21,6 @@ WITHINGS_SHORTNAME = ''
 GARMIN_USERNAME = ''
 GARMIN_PASSWORD = ''
 
-
 class DateOption(Option):
     def check_date(option, opt, value):
         valid_formats = ['%Y-%m-%d', '%Y%m%d', '%Y/%m/%d']
@@ -74,12 +73,13 @@ def sync(withings_username, withings_password, withings_shortname,
     # Withings API
     withings = WithingsAccount(withings_username, withings_password)
     user = withings.get_user_by_shortname(withings_shortname)
+	
     if not user:
         print 'could not find user: %s' % withings_shortname
         return
-#    if not user.ispublic:
-#        print 'user %s has not opened withings data' % withings_shortname
-#        return
+    #if not user.ispublic:
+    #    print 'user %s has not opened withings data' % withings_shortname
+    #    return
     startdate = int(time.mktime(fromdate.timetuple()))
     enddate = int(time.mktime(todate.timetuple())) + 86399
     groups = user.get_measure_groups(startdate=startdate, enddate=enddate)
@@ -100,15 +100,19 @@ def sync(withings_username, withings_password, withings_shortname,
         weight = group.get_weight()
         fat_ratio = group.get_fat_ratio()
         muscle_mass = group.get_muscle_mass()
+        bone_mass=group.get_bone_mass()
+        hydro = group.get_hydro()
+        # mass_hydro to percent_hydro conversion
+        ratio = 100 / weight
+        hydro = hydro * ratio
         bone_mass = group.get_bone_mass()
-        hydration = group.get_hydration()
         fit.write_device_info(timestamp=dt)
         fit.write_weight_scale(timestamp=dt, 
             weight=weight, 
-            percent_fat=fat_ratio,
+            percent_fat=fat_ratio, 
+            percent_hydration=hydro,
             muscle_mass=muscle_mass,
-            bone_mass=bone_mass,
-            percent_hydration=hydration
+			bone_mass=bone_mass,
             )
         verbose_print('appending weight scale record... %s %skg %s%%\n' % (dt, weight, fat_ratio))
     fit.finish()
@@ -117,11 +121,13 @@ def sync(withings_username, withings_password, withings_shortname,
         sys.stdout.write(fit.getvalue())
         return
 
+	verbose_print("Fit file: " + fit.getvalue())
+
     # garmin connect
     garmin = GarminConnect()
-    cookie = garmin.login(garmin_username, garmin_password)
+    session = garmin.login(garmin_username, garmin_password)
     verbose_print('attempting to upload fit file...\n')
-    r = garmin.upload_file(fit.getvalue(), cookie)
+    r = garmin.upload_file(fit.getvalue(), session)
     if r:
         verbose_print('weight.fit has been successfully uploaded!\n')
 
